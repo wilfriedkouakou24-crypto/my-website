@@ -11,8 +11,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Three.js for 3D Geometry -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- CAL.COM INLINE INITIALIZATION -->
+    <script type="text/javascript">
+        (function (C, A, L) {
+          let p = function (a, ar) { a.q.push(ar); };
+          let d = C.document;
+          C.Cal = C.Cal || function () {
+            let cal = C.Cal;
+            let ar = arguments;
+            if (!cal.loaded) {
+              cal.ns = {};
+              cal.q = cal.q || [];
+              d.head.appendChild(d.createElement("script")).src = A;
+              cal.loaded = true;
+            }
+            if (ar[0] === L) {
+              const api = function () { p(api, arguments); };
+              const namespace = ar[1];
+              api.q = api.q || [];
+              if (typeof namespace === "string") {
+                cal.ns[namespace] = cal.ns[namespace] || api;
+                p(cal.ns[namespace], ar);
+                p(cal, ["initNamespace", namespace]);
+              } else p(cal, ar);
+              return;
+            }
+            p(cal, ar);
+          };
+        })(window, "https://app.cal.com/embed/embed.js", "init");
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Grotesk:wght@300;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -26,7 +55,6 @@
             --light-opacity: 0.15;
             --light-color: rgba(59, 130, 246, 0.15);
             --light-spread: 70%;
-            /* Scroll tracking variable initialized */
             --scroll-y: 0;
         }
 
@@ -45,6 +73,38 @@
 
         .font-heading { font-family: 'Space Grotesk', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- LOADER STYLES --- */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background: #030303;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .loader-bar-container {
+            width: 200px;
+            height: 2px;
+            background: rgba(255,255,255,0.05);
+            position: relative;
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+
+        #loader-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
 
         /* --- BACKGROUND LIGHTING --- */
         #dynamic-lighting {
@@ -120,6 +180,8 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 100px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            pointer-events: none;
         }
 
         .nav-item {
@@ -161,7 +223,7 @@
         .lenis.lenis-smooth { scroll-behavior: auto; }
         ::-webkit-scrollbar { display: none; }
 
-        .glass { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); position: relative; overflow: hidden; }
         .glass::after {
             content: '';
             position: absolute;
@@ -175,8 +237,25 @@
 
         .noise-overlay { position: fixed; inset: 0; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.03; pointer-events: none; z-index: 60; }
 
+        .sticky-wrapper {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
         .morph-container { position: relative; height: 1.2em; display: flex; align-items: center; justify-content: center; }
-        .morph-text { position: absolute; white-space: nowrap; will-change: transform, filter, opacity; }
+        .morph-text { 
+            position: absolute; 
+            white-space: nowrap; 
+            will-change: transform, filter, opacity; 
+            opacity: 0;
+        }
 
         .sys-node { will-change: transform, opacity, box-shadow; transition: box-shadow 0.5s ease; }
 
@@ -196,22 +275,327 @@
             opacity: 0;
             transform: translateY(20px);
             will-change: transform, opacity;
-            white-space: pre; /* Important to maintain spacing between words */
+            white-space: pre; 
+        }
+
+        .problem-word {
+            display: inline-block;
+            opacity: 0;
+            will-change: transform, opacity, filter;
         }
 
         /* Loading Spinner */
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin-fast { animation: spin 0.6s linear infinite; }
+
+        /* --- HERO PANEL FLOATING --- */
+        .hero-float-panel {
+            position: absolute;
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(30px);
+            z-index: 10;
+        }
+
+        /* Modal Overrides for Calendar */
+        #booking-modal .glass {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* ===== RESPONSIVE IMPROVEMENTS ===== */
+
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        section {
+            width: 100%;
+        }
+
+        img, iframe, canvas, svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #webgl-container,
+        #grid-canvas,
+        #dynamic-lighting {
+            will-change: auto;
+        }
+
+        #booking-modal {
+            padding: 1rem;
+        }
+
+        #modal-content {
+            width: min(100%, 960px);
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #my-cal-inline {
+            min-height: 520px;
+        }
+
+        .hero-text {
+            word-break: break-word;
+            /* Balanced leading to prevent ambiguous clipping */
+            line-height: 0.95 !important; 
+        }
+
+        .hero-subtext {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .floating-nav {
+            max-width: calc(100vw - 24px);
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .floating-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-item {
+            flex: 0 0 auto;
+        }
+
+        .glass,
+        .reactive-card,
+        .reactive-button {
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+
+        @media (max-width: 1279px) {
+            .hero-float-panel {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                cursor: auto;
+            }
+
+            #custom-cursor,
+            #webgl-container {
+                display: none !important;
+            }
+
+            .floating-nav {
+                bottom: 16px;
+                gap: 4px;
+                padding: 6px;
+            }
+
+            .nav-item {
+                padding: 8px 14px;
+                font-size: 10px;
+            }
+
+            #main-header {
+                padding: 1.25rem 1rem;
+            }
+
+            #process .step-card {
+                padding: 2rem;
+                border-radius: 2rem;
+            }
+
+            #cta .glass {
+                border-radius: 2.5rem;
+                padding: 3rem 1.5rem;
+            }
+
+            #modal-content {
+                border-radius: 2rem;
+                padding: 1.5rem;
+            }
+
+            #close-modal {
+                top: 1rem;
+                right: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #hero {
+                min-height: 100svh;
+                padding-top: 6rem;
+                padding-bottom: 4rem;
+            }
+
+            .hero-label {
+                font-size: 9px;
+                letter-spacing: 0.35em;
+            }
+
+            .hero-text {
+                /* Adaptive scaling using clamp for mobile fitting */
+                font-size: clamp(2.5rem, 11vw, 4.5rem) !important;
+                line-height: 1.0 !important;
+            }
+
+            .hero-subtext {
+                font-size: 1rem;
+                line-height: 1.7;
+                max-width: 36rem;
+            }
+
+            #problem,
+            #cta {
+                padding-top: 6rem;
+                padding-bottom: 6rem;
+            }
+
+            #problem h2 {
+                font-size: clamp(2.5rem, 12vw, 4.5rem);
+                line-height: 1;
+            }
+
+            #narrative .morph-container {
+                font-size: clamp(2.5rem, 12vw, 5rem);
+                text-align: center;
+                padding: 0 1rem;
+            }
+
+            #process {
+                padding-top: 7rem;
+                padding-bottom: 7rem;
+            }
+
+            #process h2 {
+                font-size: clamp(2.75rem, 13vw, 5rem);
+            }
+
+            #process p {
+                font-size: 1rem;
+            }
+
+            .step-card h3 {
+                font-size: 2rem;
+                line-height: 1.1;
+            }
+
+            #cta h2 {
+                font-size: clamp(3.5rem, 18vw, 6rem);
+                line-height: 0.9;
+            }
+
+            #cta p {
+                font-size: 1rem;
+            }
+
+            #open-booking-modal-bottom {
+                width: 100%;
+                justify-content: center;
+                padding: 1.25rem 1.5rem;
+                font-size: 12px;
+                gap: 0.75rem;
+            }
+
+            #project-brief-form {
+                gap: 1rem;
+            }
+
+            #project-brief-form input,
+            #project-brief-form textarea,
+            #submit-button {
+                padding: 1rem 1rem;
+                border-radius: 1rem;
+                font-size: 16px; /* prevents zoom on iPhone */
+            }
+
+            #my-cal-inline {
+                min-height: 620px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #hero .max-w-5xl,
+            #problem .max-w-5xl,
+            #process .max-w-7xl,
+            #cta .max-w-4xl {
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+            }
+
+            .floating-nav {
+                left: 12px;
+                right: 12px;
+                transform: none;
+                width: auto;
+                justify-content: flex-start;
+            }
+
+            #main-header nav {
+                gap: 0.75rem;
+            }
+
+            #logo-top {
+                font-size: 1.25rem;
+            }
+
+            #header-cta {
+                font-size: 10px;
+                letter-spacing: 0.08em;
+                white-space: nowrap;
+            }
+
+            #modal-content {
+                padding: 1rem;
+                border-radius: 1.5rem;
+            }
+
+            #success-header h3 {
+                font-size: 1.75rem;
+            }
+
+            #my-cal-inline {
+                min-height: 680px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Dynamic Lighting Layer -->
+    <!-- 0. PRELOADER -->
+    <div id="preloader">
+        <div class="flex flex-col items-center">
+            <h2 class="text-3xl font-black font-heading tracking-tighter text-white mb-2" id="loader-logo">
+                QYRONX<span class="text-blue-500">.</span>
+            </h2>
+            <div class="font-mono text-[9px] text-blue-500 uppercase tracking-[0.4em] mb-4" id="loader-status">Initializing System...</div>
+            <div class="flex items-center gap-4">
+                <span class="font-mono text-xs text-white/40" id="loader-percent">00%</span>
+                <div class="loader-bar-container">
+                    <div id="loader-progress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="dynamic-lighting"></div>
-    
-    <!-- Interactive Grid Canvas -->
     <canvas id="grid-canvas"></canvas>
-    
     <div id="webgl-container"></div>
+
     <div id="custom-cursor">
         <div class="cursor-glow"></div>
         <div class="cursor-dot"></div>
@@ -219,51 +603,97 @@
     </div>
     <div class="noise-overlay"></div>
 
-    <!-- Floating Navigation Pill -->
     <nav class="floating-nav">
         <a href="#hero" class="nav-item active reactive-button" data-nav="boot">Boot</a>
         <a href="#problem" class="nav-item reactive-button" data-nav="problem">Problem</a>
-        <a href="#process" class="nav-item reactive-button" data-nav="build">Build</a>
+        <a href="#process" class="nav-item reactive-button" data-nav="protocol">Protocol</a>
         <a href="#cta" class="nav-item reactive-button" data-nav="online">Online</a>
     </nav>
 
-    <!-- MULTI-LAYER DEPTH (PARALLAX) -->
     <div class="depth-container">
         <div class="layer-particles" id="l1"></div>
         <div class="layer-grid" id="l2"></div>
     </div>
 
-    <header class="fixed top-0 w-full z-40 px-8 py-8 mix-blend-difference">
+    <header class="fixed top-0 w-full z-40 px-8 py-8 mix-blend-difference opacity-0" id="main-header">
         <nav class="max-w-screen-2xl mx-auto flex justify-between items-center">
             <a href="#hero" id="logo-top" class="text-2xl font-black font-heading tracking-tighter text-white reactive-button">
                 QYRONX<span class="text-blue-500">.</span>
             </a>
             <div class="flex items-center gap-6">
                 <span class="hidden md:block font-mono text-[10px] text-gray-500 uppercase tracking-widest">Protocol: Active</span>
-                <a href="#cta" class="text-xs font-bold uppercase tracking-widest text-white border-b border-white/20 pb-1 hover:border-blue-500 transition-colors reactive-button">Get a Free Preview</a>
+                <button id="header-cta" class="text-xs font-bold uppercase tracking-widest text-white border-b border-white/20 pb-1 hover:border-blue-500 transition-colors reactive-button">Get a Free Preview</button>
             </div>
         </nav>
     </header>
 
-    <main id="smooth-wrapper" class="relative z-10">
+    <main id="smooth-wrapper" class="relative z-10 invisible">
         <div id="smooth-content">
             
             <!-- 1. SYSTEM BOOT -->
-            <section id="hero" class="relative h-screen flex flex-col items-center justify-center">
-                <div class="max-w-5xl w-full px-6 text-center">
+            <section id="hero" class="relative min-h-screen md:h-screen flex flex-col items-center justify-center overflow-hidden px-4">
+                <div class="hero-float-panel glass p-4 rounded-2xl border-t border-white/10 top-[20%] left-[10%] hidden lg:block" id="hp-perf">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full border-2 border-blue-500/30 flex items-center justify-center">
+                            <span class="text-[10px] font-mono font-bold text-blue-500">98%</span>
+                        </div>
+                        <div>
+                            <p class="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Performance</p>
+                            <p class="text-[11px] font-bold text-white">System Core</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-float-panel glass px-4 py-3 rounded-xl border-t border-white/10 top-[15%] right-[15%] hidden lg:block" id="hp-uptime">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_var(--accent-green)]"></div>
+                        <p class="text-[10px] font-mono font-bold text-white uppercase tracking-widest">Nodes: Active (99.9%)</p>
+                    </div>
+                </div>
+
+                <div class="hero-float-panel glass p-4 rounded-2xl border-t border-white/10 bottom-[25%] left-[15%] hidden lg:block" id="hp-deploy">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between gap-8">
+                            <p class="text-[8px] font-mono text-gray-500 uppercase">Velocity</p>
+                            <i data-lucide="zap" class="w-3 h-3 text-teal-500"></i>
+                        </div>
+                        <div class="h-1 w-24 bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full bg-teal-500 w-3/4 shadow-[0_0_10px_var(--accent-green)]"></div>
+                        </div>
+                        <p class="text-[10px] font-bold text-white">0.4s Deployment</p>
+                    </div>
+                </div>
+
+                <div class="hero-float-panel glass p-4 rounded-2xl border-t border-white/10 bottom-[20%] right-[10%] hidden lg:block" id="hp-scale">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="layers" class="w-4 h-4 text-purple-500"></i>
+                        <div>
+                            <p class="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Scale</p>
+                            <p class="text-[11px] font-bold text-white font-mono italic">Infinite Clusters</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="max-w-6xl w-full text-center relative z-20">
                     <div class="overflow-hidden mb-6">
                         <div class="hero-label font-mono text-[10px] text-blue-500 tracking-[0.6em] uppercase opacity-0">Initializing core_systems.v3</div>
                     </div>
                     <div class="overflow-hidden">
-                        <!-- Premium word animation applied to this text -->
-                        <h1 class="hero-text text-6xl md:text-8xl lg:text-9xl font-black font-heading tracking-tighter leading-[0.8]">
-                            Build Systems.<br>Not Just Websites.
+                        <h1 class="hero-text text-5xl md:text-7xl lg:text-8xl font-black font-heading tracking-tighter leading-[0.95] mb-8">
+                            Straight to Code.<br>Zero Ambiguity.
                         </h1>
                     </div>
-                    <div class="overflow-hidden mt-12">
-                        <p class="hero-subtext text-gray-500 text-lg md:text-2xl max-w-3xl mx-auto font-light leading-relaxed opacity-0">
-                            We design and engineer high-performance digital products, platforms, and websites for startups and modern companies.
+                    <div class="overflow-hidden mt-6">
+                        <p class="hero-subtext text-gray-500 text-lg md:text-2xl max-w-3xl mx-auto font-light leading-relaxed opacity-0 mb-12">
+                            We architect and deploy high-performance digital systems at terminal velocity. No moodboards. No ambiguity. Just pure, scalable code.
                         </p>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-6 opacity-0 translate-y-8" id="hero-actions">
+                        <button id="open-booking-modal-hero" class="bg-white text-black px-12 py-6 font-black text-sm uppercase tracking-widest rounded-xl transition-all hover:scale-105 hover:bg-blue-600 hover:text-white reactive-button flex items-center gap-3">
+                            <span>Get a Free Preview</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -275,22 +705,21 @@
                         <div class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></div>
                         <p class="text-red-500 font-mono text-sm tracking-[0.3em] uppercase font-bold">Instability Detected</p>
                     </div>
-                    <h2 class="text-5xl md:text-8xl font-bold font-heading leading-[0.95] tracking-tighter text-gray-800">
-                        <span class="problem-text">Standard</span> 
-                        <span class="problem-text">logic</span> 
-                        <span class="problem-text">is</span> 
-                        <span class="problem-text text-white">fragmented.</span><br>
-                        <span class="problem-text">Static,</span> 
-                        <span class="problem-text">unoptimized,</span> 
-                        <span class="problem-text">and</span> 
-                        <span class="problem-text text-red-600">decaying.</span>
+                    <h2 class="text-5xl md:text-8xl font-bold font-heading leading-[0.95] tracking-tighter">
+                      <span class="problem-word text-gray-700">Standard</span>
+                      <span class="problem-word text-gray-700">logic</span>
+                      <span class="problem-word text-gray-700">is</span>
+                      <span class="problem-word text-white">fragmented.</span><br>
+                      <span class="problem-word text-gray-700">Static.</span>
+                      <span class="problem-word text-gray-700">Unoptimized.</span>
+                      <span class="problem-word text-red-500">Decaying.</span>
                     </h2>
                 </div>
             </section>
 
             <!-- TRANSITION: THE MOMENTUM SHIFT -->
             <section id="narrative" class="relative h-[300vh]">
-                <div class="sticky-wrapper h-screen w-full flex flex-col items-center justify-center">
+                <div class="sticky-wrapper">
                     <div class="morph-container text-6xl md:text-8xl lg:text-[10rem] font-black font-heading tracking-tighter italic">
                         <span class="morph-text morph-1">Reconstruct.</span>
                         <span class="morph-text morph-2">Optimize.</span>
@@ -299,22 +728,31 @@
                 </div>
             </section>
 
-            <!-- 4. BUILD PROCESS -->
+            <!-- 4. THE LINEAR PROTOCOL (BUILD PROCESS) -->
             <section id="process" class="relative py-48 border-t border-white/5">
-                <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row relative">
-                    <div class="md:w-1/2 md:sticky md:top-48 h-fit mb-24 md:mb-0">
-                        <!-- Protocol label removed as requested -->
-                        <h2 class="text-6xl md:text-8xl font-black font-heading tracking-tighter leading-none">System<br>Refinement.</h2>
+                <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-32 relative">
+                    <div class="h-fit md:sticky md:top-48 mb-24 md:mb-0">
+                        <h2 class="text-6xl md:text-8xl font-black font-heading tracking-tighter leading-none mb-8">The Linear<br>Protocol.</h2>
+                        <p class="text-gray-500 text-xl max-w-sm leading-relaxed font-light">We've stripped away the meetings, the moodboards, and the ambiguity. We move straight to code.</p>
                     </div>
 
-                    <div class="md:w-1/2 space-y-24">
+                    <div class="space-y-24 md:space-y-48">
                         <div class="glass p-12 rounded-[4rem] border-t border-white/10 step-card reactive-card">
-                            <h3 class="text-3xl font-bold font-heading mb-6 text-white">Structural Audit</h3>
-                            <p class="text-gray-500 text-lg leading-relaxed">Analyzing bottlenecks and legacy friction to prepare for the transition to edge performance.</p>
+                            <p class="text-blue-500 font-mono text-[10px] uppercase tracking-[0.4em] mb-6">01_INIT</p>
+                            <h3 class="text-4xl font-bold font-heading mb-6 text-white tracking-tight">Book & Brief</h3>
+                            <p class="text-gray-500 text-lg leading-relaxed">Schedule a 15-minute sync. Share your vision and assets. No deposit required to start.</p>
                         </div>
+                        
                         <div class="glass p-12 rounded-[4rem] border-t border-white/10 step-card reactive-card">
-                            <h3 class="text-3xl font-bold font-heading mb-6 text-white">Neural Deployment</h3>
-                            <p class="text-gray-500 text-lg leading-relaxed">Mapping your vision into a custom high-frequency landing page architecture.</p>
+                            <p class="text-purple-500 font-mono text-[10px] uppercase tracking-[0.4em] mb-6">02_COMPILE</p>
+                            <h3 class="text-4xl font-bold font-heading mb-6 text-white tracking-tight">We Build The Preview</h3>
+                            <p class="text-gray-500 text-lg leading-relaxed">Within 48 hours, you receive a live, interactive link. Not a Figma file. Real code.</p>
+                        </div>
+
+                        <div class="glass p-12 rounded-[4rem] border-t border-white/10 step-card reactive-card">
+                            <p class="text-teal-500 font-mono text-[10px] uppercase tracking-[0.4em] mb-6">03_DEPLOY</p>
+                            <h3 class="text-4xl font-bold font-heading mb-6 text-white tracking-tight">Approve & Scale</h3>
+                            <p class="text-gray-500 text-lg leading-relaxed">If you love it, we finalize and launch. Continue with our monthly subscription for infinite evolution.</p>
                         </div>
                     </div>
                 </div>
@@ -330,7 +768,7 @@
                         <p class="text-green-500 font-mono text-[11px] tracking-[0.6em] uppercase mb-6">Status: Online</p>
                         <h2 class="text-7xl md:text-[10rem] font-black font-heading tracking-tighter mb-12 leading-[0.8] text-white">STABLE.</h2>
                         <p class="text-gray-500 text-xl mb-16 max-w-md mx-auto leading-relaxed">The system is ready for acquisition. Deploy your free preview session now.</p>
-                        <button id="open-booking-modal" class="bg-white text-black px-16 py-8 font-black text-sm uppercase tracking-widest rounded-2xl transition-all hover:scale-110 hover:bg-blue-600 hover:text-white flex items-center gap-6 mx-auto reactive-button">
+                        <button id="open-booking-modal-bottom" class="bg-white text-black px-16 py-8 font-black text-sm uppercase tracking-widest rounded-2xl transition-all hover:scale-110 hover:bg-blue-600 hover:text-white flex items-center gap-6 mx-auto reactive-button">
                             <span>Get a Free Preview</span>
                             <i data-lucide="arrow-right" class="w-5 h-5"></i>
                         </button>
@@ -347,18 +785,19 @@
     <!-- Modal Brief with Netlify Forms -->
     <div id="booking-modal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div id="modal-backdrop" class="absolute inset-0 bg-black/90 backdrop-blur-2xl"></div>
-        <div id="modal-content" class="relative w-full max-w-xl glass rounded-[4rem] p-16 border border-white/10 transform scale-90 transition-all duration-500">
-            <button id="close-modal" class="absolute top-10 right-10 text-gray-600 hover:text-white transition-colors"><i data-lucide="x" class="w-8 h-8"></i></button>
+        <div id="modal-content" class="relative w-full max-w-4xl glass rounded-[1.5rem] md:rounded-[4rem] p-4 sm:p-6 md:p-16 border border-white/10 transform scale-90 transition-all duration-500">
+            <button id="close-modal" class="absolute top-10 right-10 text-gray-600 hover:text-white transition-colors z-[110]"><i data-lucide="x" class="w-8 h-8"></i></button>
             
             <div id="form-container">
-                <form id="project-brief-form" name="brief-submission" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="space-y-8">
-                    <!-- Netlify Hidden Inputs -->
+                <form id="project-brief-form" name="brief-submission" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="space-y-8 max-w-xl mx-auto">
                     <input type="hidden" name="form-name" value="brief-submission" />
                     <p class="hidden">
                         <label>Don’t fill this out if you’re human: <input name="bot-field" /></label>
                     </p>
 
                     <h3 class="text-4xl font-bold font-heading mb-3 tracking-tighter text-white">System Brief</h3>
+                    <p class="text-gray-500 text-sm mb-8 font-mono">Step 01: Capture Requirements</p>
+                    
                     <input type="text" name="identity" required class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white focus:border-blue-500 outline-none" placeholder="Identity / Project">
                     <textarea name="mission" required rows="4" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white focus:border-blue-500 outline-none resize-none" placeholder="Primary Mission"></textarea>
                     
@@ -369,341 +808,395 @@
                 </form>
             </div>
 
-            <!-- Success State -->
-            <div id="success-message" class="hidden text-center py-12">
-                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i data-lucide="check" class="text-green-500 w-8 h-8"></i>
+            <!-- INLINE CALENDAR SUCCESS STATE -->
+            <div id="success-message" class="hidden text-center py-4">
+                <div id="success-header" class="mb-8">
+                    <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="check" class="text-green-500 w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold font-heading text-white mb-2">Brief Transmitted</h3>
+                    <p class="text-gray-400 font-mono text-sm">Step 02: Initialize 15-Minute Sync</p>
                 </div>
-                <h3 class="text-3xl font-bold font-heading text-white mb-2">Telemetry Captured</h3>
-                <p class="text-gray-400">Opening calendar for schedule alignment...</p>
+                <div class="bg-black/20 border border-white/5 rounded-2xl md:rounded-[2rem] overflow-hidden w-full" style="width:100%;">
+                    <div id="my-cal-inline" style="width:100%; min-height:620px; height:70vh; max-height:760px; overflow-y:auto;"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        lucide.createIcons();
+        // Global variables & Device Detection
+        let lenis;
+        let mouseX = -1000, mouseY = -1000;
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        const isTablet = window.matchMedia("(max-width: 1024px)").matches;
+        const isDesktopCursor = window.matchMedia("(min-width: 1025px)").matches;
+        
+        const calNamespace = "15min";
+        const calLink = "wilfriedkouakou24/15min";
 
-        // --- PERFORMANCE OPTIMIZED SCROLL TRACKING ---
-        let latestY = 0;
-        let ticking = false;
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
 
-        window.addEventListener(
-            "scroll",
-            () => {
-                latestY = window.scrollY;
-
+            // --- PERFORMANCE OPTIMIZED SCROLL TRACKING ---
+            let ticking = false;
+            window.addEventListener("scroll", () => {
                 if (!ticking) {
                     requestAnimationFrame(() => {
-                        document.documentElement.style.setProperty("--scroll-y", String(latestY));
+                        document.documentElement.style.setProperty("--scroll-y", String(window.scrollY));
                         ticking = false;
                     });
                     ticking = true;
                 }
-            },
-            { passive: true }
-        );
+            }, { passive: true });
 
-        // --- PREMIUM TYPOGRAPHY: WORD-BY-WORD REVEAL ---
-        function splitAndAnimateHero() {
-            const h1 = document.querySelector('.hero-text');
-            if (!h1) return;
-            const originalHTML = h1.innerHTML;
+            // --- HERO ELEMENTS REVEAL ---
+            function splitAndAnimateHero() {
+                const h1 = document.querySelector('.hero-text');
+                if (!h1) return;
+                const words = h1.innerHTML.split(/(\s+|<br.*?>)/g);
+                h1.innerHTML = words.map(word => {
+                    if (word.match(/<br.*?>/) || word.trim() === "") return word;
+                    return `<span class="word-reveal-span">${word}</span>`;
+                }).join("");
+
+                const tl = gsap.timeline();
+                tl.to(".hero-label", { opacity: 0.6, duration: 0.8 })
+                  .to(".word-reveal-span", {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    stagger: 0.08,
+                    ease: "power3.out"
+                  }, "-=0.4")
+                  .to(".hero-subtext", { opacity: 1, duration: 1 }, "-=0.4")
+                  .to(".hero-float-panel", { 
+                    opacity: 1, 
+                    y: 0, 
+                    duration: 1, 
+                    stagger: 0.15, 
+                    ease: "power2.out" 
+                  }, "-=0.6")
+                  .to("#hero-actions", {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power3.out"
+                  }, "-=0.8");
+            }
+
+            // --- PRELOADER SEQUENCE ---
+            function startPreloader() {
+                let progress = 0;
+                const progressEl = document.getElementById('loader-progress');
+                const percentEl = document.getElementById('loader-percent');
+                const preloader = document.getElementById('preloader');
+                const mainContent = document.getElementById('smooth-wrapper');
+                const header = document.getElementById('main-header');
+                const floatingNav = document.querySelector('.floating-nav');
+
+                const interval = setInterval(() => {
+                    progress += Math.floor(Math.random() * 15) + 5;
+                    if (progress > 100) progress = 100;
+                    
+                    if(progressEl) progressEl.style.width = `${progress}%`;
+                    if(percentEl) percentEl.innerText = `${progress.toString().padStart(2, '0')}%`;
+
+                    if (progress === 100) {
+                        clearInterval(interval);
+                        
+                        const exitTl = gsap.timeline({
+                            onComplete: () => {
+                                preloader.style.display = 'none';
+                                if (lenis) lenis.start();
+                                splitAndAnimateHero();
+                            }
+                        });
+
+                        exitTl.to("#loader-status", { opacity: 0, y: -10, duration: 0.3 })
+                              .to("#loader-logo", { letterSpacing: "1em", opacity: 0, duration: 0.8, ease: "power4.inOut" }, "-=0.1")
+                              .to(preloader, { opacity: 0, duration: 0.8, ease: "power2.inOut" }, "-=0.4")
+                              .set(mainContent, { visibility: "visible", autoAlpha: 1 })
+                              .to([header, floatingNav], { opacity: 1, pointerEvents: "auto", duration: 1 }, "-=0.2");
+                    }
+                }, 150);
+            }
+
+            // --- THREE.JS SETUP ---
+            let scene, camera, renderer, globePoints, globeLines;
+            const webglContainer = document.getElementById('webgl-container');
             
-            // Refined splitting that accounts for spaces and <br> tags
-            const words = originalHTML.split(/(\s+|<br.*?>)/g);
-            h1.innerHTML = words.map(word => {
-                if (word.match(/<br.*?>/) || word.trim() === "") return word;
-                return `<span class="word-reveal-span">${word}</span>`;
-            }).join("");
-
-            const tl = gsap.timeline({ delay: 0.5 });
+            function initThree() {
+                if(!webglContainer) return;
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = 5;
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                webglContainer.appendChild(renderer.domElement);
+                const geometry = new THREE.IcosahedronGeometry(2, 1);
+                globePoints = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.05, transparent: true, opacity: 0.8 }));
+                scene.add(globePoints);
+                globeLines = new THREE.LineSegments(new THREE.WireframeGeometry(geometry), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 }));
+                scene.add(globeLines);
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+                animate();
+            }
             
-            tl.to(".hero-label", { opacity: 0.6, duration: 0.8, ease: "power2.out" })
-              .to(".word-reveal-span", {
-                opacity: 1,
-                y: 0,
-                duration: 0.8,
-                stagger: 0.08, // Premium timing: 0.05-0.12 range
-                ease: "power3.out"
-            }, "-=0.4")
-            .to(".hero-subtext", { opacity: 1, duration: 1, ease: "power2.out" }, "-=0.4");
-        }
+            function animate() {
+                requestAnimationFrame(animate);
+                if(globePoints) globePoints.rotation.y += 0.002;
+                if(globeLines) globeLines.rotation.y += 0.002;
+                if(renderer) renderer.render(scene, camera);
+            }
 
-        // --- THREE.JS SETUP ---
-        let scene, camera, renderer, globePoints, globeLines;
-        const container = document.getElementById('webgl-container');
-
-        function initThree() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 5;
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.appendChild(renderer.domElement);
-
-            const geometry = new THREE.IcosahedronGeometry(2, 1);
-            const pMaterial = new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.05, transparent: true, opacity: 0.8 });
-            globePoints = new THREE.Points(geometry, pMaterial);
-            scene.add(globePoints);
-
-            const wireframe = new THREE.WireframeGeometry(geometry);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 });
-            globeLines = new THREE.LineSegments(wireframe, lineMat);
-            scene.add(globeLines);
-
-            window.addEventListener('resize', onWindowResize, false);
-            animate();
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            globePoints.rotation.y += 0.002;
-            globeLines.rotation.y += 0.002;
-            globePoints.rotation.x += 0.001;
-            globeLines.rotation.x += 0.001;
-            renderer.render(scene, camera);
-        }
-
-        // --- INTERACTIVE NEURAL GRID ---
-        const gridCanvas = document.getElementById('grid-canvas');
-        const ctx = gridCanvas.getContext('2d');
-        let gridPoints = [];
-        const spacing = 100;
-        let mouseX = -1000, mouseY = -1000;
-
-        function initGrid() {
-            gridCanvas.width = window.innerWidth;
-            gridCanvas.height = window.innerHeight;
-            gridPoints = [];
-            for (let x = 0; x < gridCanvas.width + spacing; x += spacing) {
-                for (let y = 0; y < gridCanvas.height + spacing; y += spacing) {
-                    gridPoints.push({ x, y });
+            // --- GRID CANVAS ---
+            const gridCanvas = document.getElementById('grid-canvas');
+            const ctx = gridCanvas ? gridCanvas.getContext('2d') : null;
+            let gridPoints = [];
+            
+            function initGrid() {
+                if(!gridCanvas) return;
+                gridCanvas.width = window.innerWidth;
+                gridCanvas.height = window.innerHeight;
+                gridPoints = [];
+                const step = isMobile ? 150 : 100;
+                for (let x = 0; x < gridCanvas.width + step; x += step) {
+                    for (let y = 0; y < gridCanvas.height + step; y += step) {
+                        gridPoints.push({ x, y });
+                    }
                 }
             }
-        }
-
-        function drawGrid() {
-            ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
-            gridPoints.forEach(p => {
-                const dx = mouseX - p.x;
-                const dy = mouseY - p.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const maxDist = 250;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
-                ctx.fillStyle = dist < maxDist ? `rgba(59, 130, 246, ${1 - dist / maxDist})` : `rgba(255, 255, 255, 0.05)`;
-                ctx.fill();
-                if (dist < maxDist) {
-                    gridPoints.forEach(p2 => {
-                        const d2x = p2.x - p.x;
-                        const d2y = p2.y - p.y;
-                        const d2 = Math.sqrt(d2x * d2x + d2y * d2y);
-                        if (d2 === spacing) {
-                            const p2dx = mouseX - p2.x;
-                            const p2dy = mouseY - p2.y;
-                            const p2dist = Math.sqrt(p2dx * p2dx + p2dy * p2dy);
-                            if (p2dist < maxDist) {
-                                ctx.beginPath();
-                                ctx.moveTo(p.x, p.y);
-                                ctx.lineTo(p2.x, p2.y);
-                                const alpha = (1 - dist / maxDist) * (1 - p2dist / maxDist);
-                                ctx.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.6})`;
-                                ctx.lineWidth = 0.5;
-                                ctx.stroke();
+            
+            function drawGrid() {
+                if(!ctx) return;
+                ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+                gridPoints.forEach(p => {
+                    const dist = Math.sqrt(Math.pow(mouseX - p.x, 2) + Math.pow(mouseY - p.y, 2));
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
+                    ctx.fillStyle = dist < 250 ? `rgba(59, 130, 246, ${1 - dist / 250})` : `rgba(255, 255, 255, 0.05)`;
+                    ctx.fill();
+                    if (dist < 250) {
+                        gridPoints.forEach(p2 => {
+                            if (Math.abs(p2.x - p.x) <= 100 && Math.abs(p2.y - p.y) <= 100 && (p2.x === p.x || p2.y === p.y) && p2 !== p) {
+                                const p2dist = Math.sqrt(Math.pow(mouseX - p2.x, 2) + Math.pow(mouseY - p2.y, 2));
+                                if (p2dist < 250) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(p.x, p.y);
+                                    ctx.lineTo(p2.x, p2.y);
+                                    ctx.strokeStyle = `rgba(59, 130, 246, ${(1 - dist / 250) * 0.6})`;
+                                    ctx.lineWidth = 0.5;
+                                    ctx.stroke();
+                                }
                             }
+                        });
+                    }
+                });
+                requestAnimationFrame(drawGrid);
+            }
+
+            // --- APP STARTUP & CONDITIONAL OPTIMIZATION ---
+            if (!isTablet) {
+                initThree();
+            }
+
+            if (!isMobile) {
+                initGrid();
+                drawGrid();
+            }
+
+            startPreloader();
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            lenis = new Lenis({ 
+                duration: isMobile ? 0.9 : 1.2, 
+                smoothWheel: !isMobile, 
+                smoothTouch: false 
+            });
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add((time) => { if(lenis) lenis.raf(time * 1000); });
+            lenis.stop();
+
+            // --- ANIMATIONS ---
+            const panels = ['#hp-perf', '#hp-uptime', '#hp-deploy', '#hp-scale'];
+            panels.forEach((id, i) => { 
+                const el = document.querySelector(id);
+                if(el) gsap.to(id, { y: i % 2 === 0 ? 15 : -15, x: i % 3 === 0 ? 10 : -10, rotation: i % 2 === 0 ? 1 : -1, duration: 4 + i, repeat: -1, yoyo: true, ease: "sine.inOut" }); 
+            });
+
+            const colorMapping = { 'hero': 'rgba(59, 130, 246, 0.15)', 'problem': 'rgba(239, 68, 68, 0.15)', 'process': 'rgba(139, 92, 246, 0.15)', 'cta': 'rgba(34, 197, 94, 0.15)' };
+            Object.entries(colorMapping).forEach(([id, color]) => { ScrollTrigger.create({ trigger: `#${id}`, start: "top center", onEnter: () => document.documentElement.style.setProperty('--light-color', color), onEnterBack: () => document.documentElement.style.setProperty('--light-color', color) }); });
+
+            gsap.fromTo('.problem-word', { opacity: 0, y: 40, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.2, stagger: 0.18, ease: "power4.out", scrollTrigger: { trigger: "#problem", start: "top 70%", toggleActions: "play none none reverse" } });
+
+            const morphTl = gsap.timeline({ scrollTrigger: { trigger: "#narrative", start: "top top", end: "bottom bottom", scrub: 1 } });
+            morphTl.fromTo(".morph-1", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 1 }).to(".morph-1", { opacity: 0, scale: 1.2, duration: 1 }).fromTo(".morph-2", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 1 }).to(".morph-2", { opacity: 0, scale: 1.2, duration: 1 }).fromTo(".morph-3", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 1 });
+
+            gsap.fromTo('.step-card', { opacity: 0, x: 50 }, { opacity: 1, x: 0, stagger: 0.3, duration: 1, ease: "power3.out", scrollTrigger: { trigger: "#process", start: "top 60%" } });
+
+            // --- CAL.COM INITIALIZATION ---
+            try {
+                Cal("init", calNamespace, { origin: "https://cal.com" });
+                Cal.ns[calNamespace]("ui", {
+                    hideEventTypeDetails: false,
+                    layout: "month_view",
+                    styles: { branding: { brandColor: "#3b82f6" } }
+                });
+            } catch (e) {
+                console.warn("Cal.com skipped.");
+            }
+
+            // --- MODAL & INLINE CALENDAR LOGIC ---
+            const modal = document.getElementById('booking-modal');
+            const formContainer = document.getElementById('form-container');
+            const successMessage = document.getElementById('success-message');
+            const form = document.getElementById('project-brief-form');
+            const submitBtn = document.getElementById('submit-button');
+            const submitText = document.getElementById('submit-text');
+            const spinner = document.getElementById('spinner');
+
+            const handleSuccess = () => { 
+                if(formContainer) formContainer.classList.add('hidden'); 
+                if(successMessage) successMessage.classList.remove('hidden'); 
+                
+                try {
+                    const calContainer = document.querySelector("#my-cal-inline");
+                    if (calContainer && !calContainer.dataset.loaded) {
+                        Cal.ns[calNamespace]("inline", {
+                            elementOrSelector: "#my-cal-inline",
+                            calLink: calLink
+                        });
+                        calContainer.dataset.loaded = "true";
+                    }
+                } catch (e) {
+                    console.error("Inline calendar failed:", e);
+                }
+            };
+
+            // Modal Trigger Buttons
+            const triggerButtons = document.querySelectorAll('#header-cta, #open-booking-modal-bottom, #open-booking-modal-hero');
+            triggerButtons.forEach(btn => { 
+                btn.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    if(modal) {
+                        modal.classList.remove('opacity-0', 'pointer-events-none'); 
+                        document.body.style.overflow = 'hidden';
+                    }
+                    if (lenis) lenis.stop(); 
+                }); 
+            });
+            
+            const closeModalBtn = document.getElementById('close-modal');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', () => {
+                    if (modal) {
+                        modal.classList.add('opacity-0', 'pointer-events-none');
+                        document.body.style.overflow = '';
+                    }
+                    if (lenis) lenis.start();
+                });
+            }
+
+            // MODAL BACKDROP LOGIC
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            if (modalBackdrop) {
+                modalBackdrop.addEventListener('click', () => {
+                    if (modal) {
+                        modal.classList.add('opacity-0', 'pointer-events-none');
+                        document.body.style.overflow = '';
+                    }
+                    if (lenis) lenis.start();
+                });
+            }
+
+            if(form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if(submitText) submitText.innerText = "Transmitting Brief...";
+                    if(submitBtn) submitBtn.disabled = true;
+                    if(spinner) spinner.classList.remove('hidden');
+                    
+                    const formData = new FormData(form);
+                    const isBlobEnv = window.location.origin.startsWith('blob') || window.location.origin === 'null' || window.location.hostname === '';
+                    const submitEndpoint = isBlobEnv ? 'https://qyronx.systems/' : window.location.pathname;
+                    
+                    fetch(submitEndpoint, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams(formData).toString(),
+                    })
+                    .then(() => {
+                        handleSuccess();
+                    })
+                    .catch(err => {
+                        console.warn('Submission fallback triggered:', err);
+                        if (isBlobEnv) {
+                            handleSuccess();
+                        } else {
+                            if (submitText) submitText.innerText = "Try Again";
+                            if (submitBtn) submitBtn.disabled = false;
+                            if (spinner) spinner.classList.add('hidden');
                         }
                     });
-                }
-            });
-            requestAnimationFrame(drawGrid);
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initThree();
-            initGrid();
-            drawGrid();
-            splitAndAnimateHero();
-        });
-
-        // --- GSAP INTEGRATION ---
-        gsap.registerPlugin(ScrollTrigger);
-        const lenis = new Lenis({ duration: 1.2, smooth: true });
-        lenis.on('scroll', ScrollTrigger.update);
-        gsap.ticker.add((time) => { lenis.raf(time * 1000) });
-
-        // Dynamic Lighting
-        const lightingStates = {
-            boot: { color: "rgba(59, 130, 246, 0.2)", spread: "70%", opacity: 1 },
-            problem: { color: "rgba(0, 0, 0, 0)", spread: "0%", opacity: 0.4 },
-            solution: { color: "rgba(139, 92, 246, 0.15)", spread: "100%", opacity: 1 },
-            online: { color: "rgba(59, 130, 246, 0.3)", spread: "40%", opacity: 1 }
-        };
-
-        function updateLighting(stateKey) {
-            const state = lightingStates[stateKey];
-            gsap.to(":root", { "--light-color": state.color, "--light-spread": state.spread, "duration": 1.5, "ease": "power1.out" });
-            gsap.to("#dynamic-lighting", { opacity: state.opacity, duration: 1.5 });
-        }
-
-        // Refined Scale logic
-        ScrollTrigger.create({
-            trigger: "body", start: "top top", end: "bottom bottom", scrub: 0.1,
-            onUpdate: (self) => {
-                const p = self.progress;
-                if (p < 0.2) { 
-                    globePoints.scale.set(1+p, 1+p, 1+p); 
-                    globeLines.material.color.setHex(0xffffff); 
-                    updateLighting('boot'); 
-                }
-                else if (p < 0.4) { 
-                    globePoints.rotation.z += 0.05; 
-                    globeLines.material.color.setHex(0xef4444); 
-                    updateLighting('problem'); 
-                }
-                else if (p < 0.8) { 
-                    const scale = 1.2 + (p - 0.4) * 2.5; 
-                    globePoints.scale.set(scale, scale, scale); 
-                    globeLines.scale.set(scale, scale, scale); 
-                    globeLines.material.color.setHex(0x3b82f6); 
-                    updateLighting('solution'); 
-                }
-                else { 
-                    updateLighting('online'); 
-                    globeLines.material.color.setHex(0x22c55e); 
-                }
+                });
             }
-        });
 
-        ScrollTrigger.create({ trigger: "#narrative", pin: ".sticky-wrapper", start: "top top", end: "bottom bottom", scrub: true });
-        gsap.to(".problem-text", { color: "white", stagger: 0.08, scrollTrigger: { trigger: ".problem-text", start: "top 85%", end: "bottom 40%", scrub: 1 } });
-        
-        const morphTl = gsap.timeline({ scrollTrigger: { trigger: "#narrative", start: "top top", end: "bottom bottom", scrub: 0.1 } });
-        morphTl.fromTo(".morph-1", { opacity: 0, scale: 0.9, filter: "blur(20px)" }, { opacity: 1, scale: 1, filter: "blur(0px)" })
-               .to(".morph-1", { opacity: 0, y: -40, filter: "blur(10px)" })
-               .fromTo(".morph-2", { opacity: 0, scale: 0.9, filter: "blur(20px)" }, { opacity: 1, scale: 1, filter: "blur(0px)" })
-               .to(".morph-2", { opacity: 0, y: -40, filter: "blur(10px)" })
-               .fromTo(".morph-3", { opacity: 0, scale: 0.9, filter: "blur(20px)" }, { opacity: 1, scale: 1, filter: "blur(0px)" });
+            // --- POINTER INTEL & REACTIVE ELEMENTS (DESKTOP ONLY) ---
+            if (isDesktopCursor) {
+                const dot = document.querySelector('.cursor-dot');
+                const halo = document.querySelector('.cursor-halo');
+                const glow = document.querySelector('.cursor-glow');
 
-        // --- CUSTOM CURSOR ---
-        const dot = document.querySelector('.cursor-dot');
-        const halo = document.querySelector('.cursor-halo');
-        const spotlight = document.querySelector('.cursor-glow');
-        let dotPos = { x: 0, y: 0 }, haloPos = { x: 0, y: 0 }, spotPos = { x: 0, y: 0 };
-        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+                window.addEventListener('mousemove', (e) => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
 
-        function updateCursor() {
-            dotPos.x += (mouseX - dotPos.x) * 0.8; dotPos.y += (mouseY - dotPos.y) * 0.8;
-            haloPos.x += (mouseX - haloPos.x) * 0.15; haloPos.y += (mouseY - haloPos.y) * 0.15;
-            spotPos.x += (mouseX - spotPos.x) * 0.05; spotPos.y += (mouseY - spotPos.y) * 0.05;
-            dot.style.transform = `translate3d(${dotPos.x}px, ${dotPos.y}px, 0)`;
-            halo.style.transform = `translate3d(${haloPos.x}px, ${haloPos.y}px, 0)`;
-            spotlight.style.transform = `translate3d(${dotPos.x}px, ${dotPos.y}px, 0)`;
-            requestAnimationFrame(updateCursor);
-        }
-        updateCursor();
+                    if (dot) gsap.to(dot, { x: mouseX, y: mouseY, duration: 0.1 });
+                    if (halo) gsap.to(halo, { x: mouseX, y: mouseY, duration: 0.3 });
+                    if (glow) gsap.to(glow, { x: mouseX, y: mouseY, duration: 0.6 });
+                });
 
-        // Interface Interactions
-        const reactive = document.querySelectorAll('.reactive-button, .reactive-card');
-        reactive.forEach(el => {
-            el.addEventListener('mousemove', (e) => {
-                const rect = el.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                if (el.classList.contains('reactive-card')) {
-                    const rotateX = -(y - rect.height/2) * 0.03;
-                    const rotateY = (x - rect.width/2) * 0.03;
-                    gsap.to(el, { rotateX, rotateY, scale: 1.02, duration: 0.3 });
-                    el.style.setProperty('--x', `${(x / rect.width) * 100}%`);
-                    el.style.setProperty('--y', `${(y / rect.height) * 100}%`);
-                } else {
-                    gsap.to(el, { x: (x - rect.width/2) * 0.3, y: (y - rect.height/2) * 0.3, duration: 0.3 });
-                }
-            });
-            el.addEventListener('mouseleave', () => gsap.to(el, { x: 0, y: 0, rotateX: 0, rotateY: 0, scale: 1, duration: 0.5 }));
-        });
+                const reactive = document.querySelectorAll('.reactive-button, .reactive-card');
+                reactive.forEach(el => {
+                    el.addEventListener('mousemove', (e) => {
+                        const rect = el.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+                        gsap.to(el, { x: x * 0.1, y: y * 0.1, duration: 0.3 });
+                    });
 
-        // Navigation
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => { item.addEventListener('click', (e) => { e.preventDefault(); lenis.scrollTo(item.getAttribute('href')); }); });
-        const navMapping = [{id:'#hero',l:'boot'},{id:'#problem',l:'problem'},{id:'#process',l:'build'},{id:'#cta',l:'online'}];
-        navMapping.forEach(sec => {
-            ScrollTrigger.create({ trigger: sec.id, start: "top 50%", end: "bottom 50%",
-                onToggle: self => { if (self.isActive) navItems.forEach(nav => nav.classList.toggle('active', nav.dataset.nav === sec.l)); }
-            });
-        });
+                    el.addEventListener('mouseleave', () => {
+                        gsap.to(el, { x: 0, y: 0, duration: 0.5 });
+                    });
+                });
 
-        // Modal Logic
-        const modal = document.getElementById('booking-modal');
-        const formContainer = document.getElementById('form-container');
-        const successMessage = document.getElementById('success-message');
-        const form = document.getElementById('project-brief-form');
-        const submitBtn = document.getElementById('submit-button');
-        const submitText = document.getElementById('submit-text');
-        const spinner = document.getElementById('spinner');
+                document.querySelectorAll('a, button, .glass').forEach(el => {
+                    el.addEventListener('mouseenter', () => {
+                        if (halo) gsap.to(halo, {
+                            width: 60,
+                            height: 60,
+                            borderColor: 'rgba(59, 130, 246, 0.5)',
+                            duration: 0.3
+                        });
+                    });
 
-        document.getElementById('open-booking-modal').addEventListener('click', () => { modal.classList.remove('opacity-0', 'pointer-events-none'); lenis.stop(); });
-        document.getElementById('close-modal').addEventListener('click', () => { 
-            modal.classList.add('opacity-0', 'pointer-events-none'); 
-            lenis.start();
-            // Reset modal state
-            setTimeout(() => {
-                formContainer.classList.remove('hidden');
-                successMessage.classList.add('hidden');
-            }, 500);
-        });
-
-        // --- NETLIFY AJAX SUBMISSION ---
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            // UI State Change
-            submitText.innerText = "Transmitting...";
-            spinner.classList.remove('hidden');
-            submitBtn.disabled = true;
-
-            const formData = new FormData(form);
-
-            fetch("/", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams(formData).toString(),
-            })
-            .then(() => {
-                // Success UI
-                formContainer.classList.add('hidden');
-                successMessage.classList.remove('hidden');
-                lucide.createIcons(); // Refresh icons for success state
-
-                // Clear form
-                form.reset();
-                submitText.innerText = "Get a Free Preview";
-                spinner.classList.add('hidden');
-                submitBtn.disabled = false;
-
-                // Open Cal.com
-                setTimeout(() => {
-                    window.open('https://cal.com/wilfried-will-xhphhe/15min?overlayCalendar=true', '_blank');
-                }, 1000);
-            })
-            .catch((error) => {
-                submitText.innerText = "Connection Error";
-                spinner.classList.add('hidden');
-                submitBtn.disabled = false;
-                console.error('Submission failed:', error);
-            });
-        });
-
-        document.querySelectorAll('a, button, .glass').forEach(el => {
-            el.addEventListener('mouseenter', () => gsap.to(halo, { width: 60, height: 60, borderColor: 'rgba(59, 130, 246, 0.5)', duration: 0.3 }));
-            el.addEventListener('mouseleave', () => gsap.to(halo, { width: 36, height: 36, borderColor: 'rgba(255,255,255,0.2)', duration: 0.3 }));
+                    el.addEventListener('mouseleave', () => {
+                        if (halo) gsap.to(halo, {
+                            width: 36,
+                            height: 36,
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            duration: 0.3
+                        });
+                    });
+                });
+            }
         });
     </script>
 </body>
