@@ -2,7 +2,7 @@
 <html lang="en" class="scroll-smooth bg-[#030303]">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Qyronx | System Intelligence</title>
     
     <!-- Scripts -->
@@ -56,6 +56,8 @@
             --light-color: rgba(59, 130, 246, 0.15);
             --light-spread: 70%;
             --scroll-y: 0;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-top: env(safe-area-inset-top, 0px);
         }
 
         body {
@@ -85,6 +87,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            min-height: 100dvh;
         }
 
         .loader-bar-container {
@@ -349,6 +352,17 @@
             backface-visibility: hidden;
         }
 
+        /* Viewport behavior on Safari/iPad */
+        #hero, #cta, .sticky-wrapper {
+            min-height: 100dvh;
+        }
+
+        @supports not (height: 100dvh) {
+            #preloader, #hero, #cta, .sticky-wrapper {
+                min-height: 100vh;
+            }
+        }
+
         /* ===== MOBILE / TABLET ONLY OPTIMIZATION ===== */
 
         @media (hover: none), (pointer: coarse) {
@@ -414,7 +428,6 @@
             }
 
             #hero {
-                min-height: 100svh;
                 padding-top: 6rem;
                 padding-bottom: 4rem;
             }
@@ -457,8 +470,8 @@
             }
 
             #process {
-                padding-top: 7rem;
-                padding-bottom: 7rem;
+                padding-top: 6.5rem;
+                padding-bottom: 6.5rem;
             }
 
             #process h2 {
@@ -522,6 +535,123 @@
                 min-height: 560px;
                 height: 65vh;
                 max-height: 700px;
+            }
+        }
+
+        /* ===== IPAD / TOUCH DEVICE SPECIFIC FIXES ===== */
+        @media (min-width: 768px) and (max-width: 1180px) {
+            #main-header {
+                mix-blend-mode: normal !important;
+                background: rgba(3, 3, 3, 0.6);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                padding-top: calc(1rem + var(--safe-top));
+            }
+
+            .floating-nav {
+                bottom: calc(12px + var(--safe-bottom));
+                left: 12px;
+                right: 12px;
+                transform: none;
+                width: auto;
+                justify-content: flex-start;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 8px;
+            }
+
+            .nav-item {
+                flex: 0 0 auto;
+                padding: 9px 14px;
+                font-size: 10px;
+            }
+
+            .hero-text {
+                font-size: clamp(3.2rem, 7vw, 5.6rem) !important;
+                line-height: 0.96 !important;
+            }
+
+            .hero-subtext {
+                font-size: 1.05rem;
+                max-width: 42rem;
+            }
+
+            #problem h2 {
+                font-size: clamp(2.8rem, 6vw, 5rem);
+                line-height: 1;
+            }
+
+            #process h2 {
+                font-size: clamp(3rem, 6.5vw, 5.5rem);
+            }
+
+            #cta h2 {
+                font-size: clamp(4rem, 10vw, 7rem);
+                line-height: 0.92;
+            }
+
+            .hero-text .problem-word,
+            .problem-headline .problem-word,
+            #process .problem-word {
+                white-space: normal !important;
+            }
+
+            #open-booking-modal-hero,
+            #open-booking-modal-bottom {
+                min-height: 56px;
+                padding: 1rem 1.25rem;
+            }
+
+            #cta .glass {
+                border-radius: 2.5rem;
+                padding: 3rem 2rem;
+            }
+
+            #booking-modal {
+                padding: 1rem;
+                align-items: center;
+            }
+
+            #modal-content {
+                width: min(100%, 860px);
+                max-height: calc(100dvh - 2rem - var(--safe-top) - var(--safe-bottom));
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 2rem;
+                padding: 1.5rem;
+                transform: none !important;
+            }
+
+            #my-cal-inline {
+                min-height: 700px;
+                height: 72dvh;
+                max-height: 820px;
+            }
+        }
+
+        /* Narrower iPads / split screen */
+        @media (min-width: 768px) and (max-width: 900px) {
+            .hero-text {
+                font-size: clamp(2.8rem, 8vw, 4.8rem) !important;
+            }
+
+            #problem h2 {
+                font-size: clamp(2.5rem, 7vw, 4.4rem);
+            }
+
+            #process h2 {
+                font-size: clamp(2.7rem, 7vw, 4.6rem);
+            }
+
+            #process .grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            #my-cal-inline {
+                min-height: 640px;
+                height: 68dvh;
             }
         }
 
@@ -676,7 +806,7 @@
         <div id="smooth-content">
             
             <!-- 1. SYSTEM BOOT -->
-            <section id="hero" class="relative min-h-screen md:h-screen flex flex-col items-center justify-center overflow-hidden px-4">
+            <section id="hero" class="relative flex flex-col items-center justify-center overflow-hidden px-4">
                 <div class="hero-float-panel glass p-4 rounded-2xl border-t border-white/10 top-[20%] left-[10%] hidden lg:block" id="hp-perf">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full border-2 border-blue-500/30 flex items-center justify-center">
@@ -787,7 +917,7 @@
                             <span class="problem-letter">a</span><span class="problem-letter">n</span><span class="problem-letter">d</span>
                         </span>
                         <span class="problem-word text-red-600 emphasis-red">
-                            <span class="problem-letter">d</span><span class="problem-letter">e</span><span class="problem-letter">c</span><span class="problem-letter">a</span><span class="problem-letter">y</span><span class="problem-letter">i</span><span class="problem-letter">n</span><span class="problem-letter">g</span><span class="problem-letter">.</span>
+                            <span class="problem-letter">d</span><span class="problem-letter">e</span><span class="problem-letter">c</span><span class="problem-letter">a</span><span class="problem-letter">y</span><span class="problem-letter">i</span><span class="problem-letter">n</span><span class="problem-letter">n</span><span class="problem-letter">g</span><span class="problem-letter">.</span>
                         </span>
                     </h2>
                 </div>
@@ -919,13 +1049,21 @@
     </div>
 
     <script>
-        // Global variables & Device Detection
+        // --- SYSTEM CORE: SCROLL RESTORATION ---
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.addEventListener('load', () => {
+            window.scrollTo(0, 0);
+        });
+
+        // Global variables & Precise Device Detection
         let lenis;
         let mouseX = -1000, mouseY = -1000;
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
         const isTablet = window.matchMedia("(max-width: 1024px)").matches;
-        const isDesktopCursor = window.matchMedia("(min-width: 1025px)").matches;
         const isTouchDevice = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+        const isDesktopCursor = window.matchMedia("(min-width: 1025px)").matches && !isTouchDevice;
         
         const calNamespace = "15min";
         const calLink = "wilfriedkouakou24/15min";
@@ -1111,14 +1249,21 @@
 
             gsap.registerPlugin(ScrollTrigger);
 
-            lenis = new Lenis({ 
-                duration: isMobile ? 0.9 : 1.2, 
-                smoothWheel: !isMobile, 
-                smoothTouch: false 
-            });
-            lenis.on('scroll', ScrollTrigger.update);
-            gsap.ticker.add((time) => { if(lenis) lenis.raf(time * 1000); });
-            lenis.stop();
+            if (!isTouchDevice) {
+                lenis = new Lenis({ 
+                    duration: isMobile ? 0.9 : 1.2, 
+                    smoothWheel: !isMobile, 
+                    smoothTouch: false 
+                });
+
+                if (lenis) {
+                    lenis.scrollTo(0, { immediate: true });
+                }
+
+                lenis.on('scroll', ScrollTrigger.update);
+                gsap.ticker.add((time) => { if(lenis) lenis.raf(time * 1000); });
+                lenis.stop();
+            }
 
             // --- ANIMATIONS ---
             const panels = ['#hp-perf', '#hp-uptime', '#hp-deploy', '#hp-scale'];
@@ -1208,24 +1353,6 @@
             const submitText = document.getElementById('submit-text');
             const spinner = document.getElementById('spinner');
 
-            const handleSuccess = () => { 
-                if(formContainer) formContainer.classList.add('hidden'); 
-                if(successMessage) successMessage.classList.remove('hidden'); 
-                
-                try {
-                    const calContainer = document.querySelector("#my-cal-inline");
-                    if (calContainer && !calContainer.dataset.loaded) {
-                        Cal.ns[calNamespace]("inline", {
-                            elementOrSelector: "#my-cal-inline",
-                            calLink: calLink
-                        });
-                        calContainer.dataset.loaded = "true";
-                    }
-                } catch (e) {
-                    console.error("Inline calendar failed:", e);
-                }
-            };
-
             const triggerButtons = document.querySelectorAll('#header-cta, #open-booking-modal-bottom, #open-booking-modal-hero');
             triggerButtons.forEach(btn => { 
                 btn.addEventListener('click', (e) => { 
@@ -1277,12 +1404,24 @@
                         body: new URLSearchParams(formData).toString(),
                     })
                     .then(() => {
-                        handleSuccess();
+                        if(formContainer) formContainer.classList.add('hidden'); 
+                        if(successMessage) successMessage.classList.remove('hidden'); 
+                        try {
+                            const calContainer = document.querySelector("#my-cal-inline");
+                            if (calContainer && !calContainer.dataset.loaded) {
+                                Cal.ns[calNamespace]("inline", {
+                                    elementOrSelector: "#my-cal-inline",
+                                    calLink: calLink
+                                });
+                                calContainer.dataset.loaded = "true";
+                            }
+                        } catch (e) { console.error(e); }
                     })
                     .catch(err => {
                         console.warn('Submission fallback triggered:', err);
                         if (isBlobEnv) {
-                            handleSuccess();
+                            if(formContainer) formContainer.classList.add('hidden'); 
+                            if(successMessage) successMessage.classList.remove('hidden'); 
                         } else {
                             if (submitText) submitText.innerText = "Try Again";
                             if (submitBtn) submitBtn.disabled = false;
@@ -1292,9 +1431,8 @@
                 });
             }
 
-            // --- POINTER INTEL & REACTIVE ELEMENTS (DESKTOP ONLY) ---
-            // REFINED: Strictly gated for non-touch desktops
-            if (isDesktopCursor && !isTouchDevice) {
+            // --- POINTER INTEL & REACTIVE ELEMENTS ---
+            if (isDesktopCursor) {
                 const dot = document.querySelector('.cursor-dot');
                 const halo = document.querySelector('.cursor-halo');
                 const glow = document.querySelector('.cursor-glow');
